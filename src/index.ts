@@ -44,7 +44,7 @@ namespace App {
   function write_general_sheet(sheet: Sheet, data: GlobalData) {
     get_first_row(sheet, 3).setValues([["Nombre de VS", "Victoires", "Score (%)"]]);
     get_first_column(sheet, data.players.length).setValues(players(data));
-    sheet.getRange(2,2,data.players.length,3).setValues(data.to_general_recap().map((x)=>[x.total, x.wins, x.rate]));
+    sheet.getRange(2,2,data.players.length,3).setValues(data.get_general_display());
     sheet.getRange(2,2,data.players.length,2).setBackgrounds(Array(data.players.length).fill(Array(2).fill(COLORS.empty)));
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMaxpointWithValue(

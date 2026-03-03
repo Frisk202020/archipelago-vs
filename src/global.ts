@@ -18,11 +18,9 @@ namespace App {
         data: string[][];
         colors: string[][];
     }
-    export interface General {
-        total: number, wins: number, rate: number
-    }
     export class GlobalData {
         total_playthroughs_matrix: number[][];
+        general_array: WinCount[];
         player_game_matrix: number[][];
         player_player_matrix: WinCount[][];
         games: Array<string>;
@@ -30,11 +28,13 @@ namespace App {
 
         constructor(games: Array<string>, players: Array<string>) {
             this.total_playthroughs_matrix = Array();
+            this.general_array = Array();
             this.player_game_matrix = Array();
             this.player_player_matrix = Array();
             for (let i = 0; i < players.length; i++) {
                 this.player_game_matrix.push(Array(games.length).fill(-1));
                 this.total_playthroughs_matrix.push(Array(games.length).fill(0));
+                this.general_array.push({wins: 0, losses: 0});
 
                 const arr = Array();
                 for (let i = 0; i < players.length; i++) {
@@ -54,12 +54,14 @@ namespace App {
                 const p_ids = s.loosers.map((x)=>data.player_ids.get(x)!);
 
                 global.total_playthroughs_matrix[w_id][g_id]++;
+                global.general_array[w_id].wins++;
                 if (global.player_game_matrix[w_id][g_id] < 0) { global.player_game_matrix[w_id][g_id] = 1; }
                 else { global.player_game_matrix[w_id][g_id]++; }
 
                 for (const p_id of p_ids) {
                     if (global.player_game_matrix[p_id][g_id] < 0) { global.player_game_matrix[p_id][g_id] = 0; }
                     global.total_playthroughs_matrix[p_id][g_id]++;
+                    global.general_array[p_id].losses++;
 
                     global.player_player_matrix[w_id][p_id].wins++;
                     global.player_player_matrix[p_id][w_id].losses++;
@@ -69,15 +71,13 @@ namespace App {
             return global;
         }
 
-        to_general_recap(): General[] {
-            return this.player_player_matrix.map((row)=>{
-                let wins = 0; let total = 0;
-                for (const x of row) {
-                    wins += x.wins;
-                    total += x.wins + x.losses;
+        get_general_display(): string[][] {
+            return this.general_array.map(
+                (x)=>{
+                    const tot = x.wins + x.losses;
+                    return [x.wins, tot, 100 * x.wins / tot].map((x)=>x.toString())
                 }
-                return {wins, total, rate: 100 * wins / total};
-            });
+            );
         }
 
         get_game_display(): Display {
