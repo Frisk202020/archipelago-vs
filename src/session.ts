@@ -71,6 +71,8 @@ namespace App {
         const players = Array<string>();
         const times = Array<string>();
         for (let i = 1; i < raw.length; i++) {
+            if (raw[i] === "")  { break; }
+
             if (!player_sheet_ids.has(raw[i])) {
                 player_sheet_ids.set(raw[i], next_p);
                 players_ordered_array.push(raw[i]);

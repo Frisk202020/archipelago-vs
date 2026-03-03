@@ -3,6 +3,7 @@ namespace App {
   const SESSION_SHEET_ID = 1178533548;
   const PLAYER_SHEET_ID = 1081434893;
   const GENERAL_ID = 0;
+  const DEFAULT_BG = "#ffffff";
   let players_cache: string[][] | null = null;
   function players(x: GlobalData) {
     if (players_cache) { return players_cache; }
@@ -61,6 +62,30 @@ namespace App {
     sheet.setConditionalFormatRules([rule]);
   }
 
+  function get_clear_range(sheet: Sheet): {rows: number, cols: number} {
+    let cols: number | null = null;
+    for (let i = 1; true; i++) {
+      const cell = sheet.getRange(1,i);
+      if (cell.getValue() === "" && cell.getBackground() === DEFAULT_BG) {
+        cols = i-1; break;
+      }
+    }
+
+    for (let i = 2; true; i++) {
+      const cell = sheet.getRange(i,1);
+      if (cell.getValue() === "" && cell.getBackground() === DEFAULT_BG) {
+        return {rows: i-1, cols};
+      }
+    }
+  } function clear(sheet: Sheet) {
+    const size = get_clear_range(sheet);
+    if (size.rows === 0 || size.cols === 0) { return; }
+
+    sheet.getRange(1, 1, size.rows, size.cols)
+      .clearContent()
+      .setBackgrounds(Array(size.rows).fill(Array(size.cols).fill("#ffffff")));  
+  }
+
   function write_sheet(
     ss: GoogleAppsScript.Spreadsheet.Spreadsheet, 
     id: number,
@@ -69,6 +94,8 @@ namespace App {
   ) {
     const sheet = ss.getSheetById(id);
     if (!sheet) { throw new Error(`Sheet ${id} not found`); }
+    clear(sheet);
+    
     writter(sheet, data);
     shared_style(sheet);
   } export function main() {
