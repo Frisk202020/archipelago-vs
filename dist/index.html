@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <div id="main">
+        </div>
+    </body>
+    <script>
+        const main = document.getElementById("main");
+        const loading = document.createElement("p");
+        loading.textContent = "Loading...";
+        main.appendChild(loading);
+    
+        let inputs = null;
+        google.script.run
+            .withSuccessHandler(fetchSuccessHandler)
+            .withFailureHandler(fetchErrorHandler)
+            .get_colors();
+
+        function generateError(text) {
+            const p = document.createElement("p");
+            p.textContent = text;
+            main.appendChild(p);
+        }
+
+        function btnHandler() {
+            google.script.run
+                .withFailureHandler(setErrorHandler)
+                .set_colors(
+                    inputs[0].value, inputs[1].value,
+                    inputs[2].value, inputs[3].value,
+                    inputs[3].value,
+            );
+        }
+
+        function setErrorHandler(err) {
+            generateError("ERROR: Failed to set new colors -- " + err);
+        }
+
+        function fetchSuccessHandler(colors) {
+            if (
+                colors.win === undefined || 
+                colors.lose === undefined ||
+                colors.labels === undefined ||
+                colors.empty === undefined ||
+                colors.void === undefined
+            ) {
+                generateError("ERROR: Received colors object is missing properties");
+            } else {
+                inputs = [
+                    {label: "Couleur du GOAT", value: colors.win}, 
+                    {label: "Couleur des Skill Issue", value: colors.lose}, 
+                    {label: "Couleur de la case neutre", value: colors.void}, 
+                    {label: "Couleur d'une cellule de texte", value: colors.labels}, 
+                    {label: "Couleur d'une cellule 'x'", value: colors.empty}
+                ].map((x,i)=>{
+                    const div = document.createElement("div");
+                    const ipt = document.createElement("input");
+                    const label = document.createElement("label");
+
+                    ipt.type = "color"; ipt.name = i; ipt.value = x.value;
+                    label.for = i; label.textContent = x.label;
+                    loading.style.opacity = 0;
+                    div.appendChild(ipt); div.appendChild(label); main.appendChild(div);
+                    return ipt;
+                });
+
+                const div = document.createElement("div");
+                div.style.width = "100%"; div.style.display = "flex"; div.style.justifyContent = "center";
+
+                const btn = document.createElement("btn");
+                btn.textContent = "Enregistrer";
+                btn.onclick = btnHandler;
+                btn.style.backgroundColor = "#f1dd68";
+                btn.style.border = "solid 2px";
+                btn.style.borderRadius = "10px";
+                btn.style.padding = "10px"
+                div.appendChild(btn);
+                main.appendChild(div);
+            }
+        } function fetchErrorHandler(err) {
+            generateError("ERROR: Failed to fetch current colors -- " + err);
+        }
+    </script>
+    <style>
+        input {
+            margin: 3%;
+        } btn:hover {
+            cursor: pointer;
+        }
+    </style>
+</html>

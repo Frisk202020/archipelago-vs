@@ -10,6 +10,13 @@ namespace App {
             return "#"+[
                 this.r, this.g, this.b
             ].map((x)=>x.toString(16).padStart(2, "0")).join("");
+        } static from_hex(x: string): RGB {
+            const bigint = parseInt(x, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+
+            return new RGB(r,g,b);
         }
     }
     const PADDING = 20; 
