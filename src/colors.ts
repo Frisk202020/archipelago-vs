@@ -96,8 +96,6 @@ namespace App {
     }
 
     export function save_colors(raw: string) {
-        //! TODO : add success handler ()=>close()
-        //! TODO : add btn to put back default colors
         const colors = raw.split(";");
         for (const x of [
             ["victory", colors[0]],

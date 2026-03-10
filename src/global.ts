@@ -11,6 +11,7 @@ namespace App {
     export class GlobalData {
         total_playthroughs_matrix: number[][];
         general_array: WinCount[];
+        team_array: WinCount[];
         player_game_matrix: number[][];
         player_player_matrix: WinCount[][];
         games: Array<string>;
@@ -19,12 +20,14 @@ namespace App {
         constructor(games: Array<string>, players: Array<string>) {
             this.total_playthroughs_matrix = Array();
             this.general_array = Array();
+            this.team_array = Array();
             this.player_game_matrix = Array();
             this.player_player_matrix = Array();
             for (let i = 0; i < players.length; i++) {
                 this.player_game_matrix.push(Array(games.length).fill(-1));
                 this.total_playthroughs_matrix.push(Array(games.length).fill(0));
                 this.general_array.push({wins: 0, losses: 0});
+                this.team_array.push({wins: 0, losses: 0});
 
                 const arr = Array();
                 for (let i = 0; i < players.length; i++) {
@@ -35,7 +38,7 @@ namespace App {
 
             this.games = games; this.players = players;
         }
-
+        
         static build_from_sessions(data: SessionResult): GlobalData {
             const global = new GlobalData(data.games_array, data.players_array);
             for (const s of data.sessions) {
@@ -58,16 +61,24 @@ namespace App {
                 }
             }
 
+            for (const t_data of data.team_data) {
+                for (const x of t_data.winners) {
+                    global.team_array[data.player_ids.get(x)!].wins++;
+                } for (const x of t_data.losers) {
+                    global.team_array[data.player_ids.get(x)!].losses++;
+                }
+            }
+
+            console.log(global.team_array);
             return global;
         }
 
         get_general_display(): string[][] {
-            return this.general_array.map(
-                (x)=>{
-                    const tot = x.wins + x.losses;
-                    return [x.wins, tot, 100 * x.wins / tot].map((x)=>x.toString())
-                }
-            );
+            return this.general_array.map(display_win_count);
+        }
+
+        get_team_display(): string[][] {
+            return this.team_array.map(display_win_count);
         }
 
         get_game_display(): Display {
@@ -107,5 +118,10 @@ namespace App {
                 data, colors
             }
         }
+    }
+
+    function display_win_count(x: WinCount) {
+        const tot = x.wins + x.losses;
+        return [tot, x.wins, 100 * x.wins / tot].map((x)=>x.toString())
     }
 }

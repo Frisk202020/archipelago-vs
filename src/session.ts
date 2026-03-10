@@ -8,12 +8,16 @@ namespace App {
         game: string,
         winner: string,
         loosers: string[]
+    } interface SessionTeamData {
+        winners: string[],
+        losers: string[]
     } export interface SessionResult {
         sessions: SessionData[],
         game_ids: Map<string, number>,
         games_array: Array<string>,
         player_ids: Map<string, number>,
-        players_array: Array<string>
+        players_array: Array<string>,
+        team_data: SessionTeamData[]
     }
 
     function with_fallback(n: number | undefined) {
@@ -60,7 +64,7 @@ namespace App {
         }
     }
 
-    function parse_session_from_raw(raw: string[]): SessionData {
+    function parse_session_from_raw(raw: string[], teams_record: string[][]): SessionData {
         const game = raw[0];
         if (!game_sheet_ids.has(game)) {
             game_sheet_ids.set(game, next_g);
@@ -70,6 +74,7 @@ namespace App {
 
         const players = Array<string>();
         const times = Array<string>();
+        let team_id = teams_record.length === 0 ? -1 :  0;
         for (let i = 1; i < raw.length; i++) {
             if (raw[i] === "")  { break; }
 
@@ -79,6 +84,14 @@ namespace App {
                 next_p++;
             }
             players.push(raw[i]);
+
+            if (team_id < 0) {
+                teams_record.push([raw[i]]);
+            } else {
+                teams_record[team_id].push(raw[i]);
+                team_id++;
+            }
+
             i++;
             times.push(raw[i]);
         }
@@ -93,19 +106,57 @@ namespace App {
 
     export function parse_sheet(sheet: GoogleAppsScript.Spreadsheet.Sheet): SessionResult {
         const data = sheet.getDataRange().getDisplayValues();
-        const raw = Array<string[]>();
+        const sessions = Array<SessionData>();
+        const team_data = Array<SessionTeamData>();
+
+        let current_teams = Array(); let session_id = 1;
         for (let i = 0; i < data.length; i++) {
             if (data[i][0] === "Jeux") {
                 i++;
                 while (data[i] !== undefined && data[i][0] !== "") {
-                    raw.push(data[i]);
+                    sessions.push(parse_session_from_raw(data[i], current_teams));
                     i++
                 }
+
+                let winners: string[] | null = null;
+                let losers: string[] | null = null;
+                let team_id = 0;
+                for (let j = 1; j < data[i].length && data[i][j].length > 0; j += 2) {
+                    switch (data[i][j].toLowerCase()) {
+                        case "victoire":
+                            if (winners) {
+                                throw new Error("Ce script ne prend pas en charge une session avec plus d'une équipe gagnante");
+                            }
+                            winners = current_teams[team_id];
+                            break;
+                        case "defaite":
+                            if (losers) {
+                                losers = losers.concat(current_teams[team_id]);
+                            } else {
+                                losers = current_teams[team_id];
+                            }
+                            break;
+                        default: 
+                            throw new Error(`Résultat inconnu: ${data[i][j]}. Ceux pris en charge sonr "VICTOIRE" ou "DEFAITE"`);
+                    }
+                    team_id++;
+                }
+
+                if (!winners) {
+                    throw new Error(`Erreur: la session ${session_id} n'a pas d'équipe gagnante.`);
+                } if (!losers) {
+                    throw new Error(`Erreur: la session ${session_id} n'a pas d'équipe perdante`);
+                }
+
+                team_data.push({winners, losers});
+                current_teams = Array();
+                session_id++;
             }
         }
 
         return {
-            sessions: raw.map((x)=>parse_session_from_raw(x)),
+            sessions,
+            team_data,
             game_ids: game_sheet_ids,
             player_ids: player_sheet_ids,
             players_array: players_ordered_array,

@@ -3,6 +3,7 @@ namespace App {
   const SESSION_SHEET_ID = 1178533548;
   const PLAYER_SHEET_ID = 1081434893;
   const GENERAL_ID = 0;
+  const TEAMS_ID = 1879123301;
   const DEFAULT_BG = "#ffffff";
   let players_cache: string[][] | null = null;
   function players(x: GlobalData) {
@@ -41,13 +42,14 @@ namespace App {
       .setBackgrounds(display.colors);
   }
 
-  function write_general_sheet(sheet: Sheet, data: GlobalData) {
+  function write_summary_sheet(sheet: Sheet, data: GlobalData, forGeneral=true) {
     const colors = get_colors();
 
     get_first_row(sheet, 3).setValues([["Nombre de VS", "Victoires", "Score (%)"]]);
     get_first_column(sheet, data.players.length).setValues(players(data));
-    sheet.getRange(2,2,data.players.length,3).setValues(data.get_general_display());
+    sheet.getRange(2,2,data.players.length,3).setValues(forGeneral ? data.get_general_display() : data.get_team_display());
     sheet.getRange(2,2,data.players.length,2).setBackgrounds(Array(data.players.length).fill(Array(2).fill(colors.empty)));
+
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMaxpointWithValue(
         colors.victory.to_hex(),
@@ -62,6 +64,8 @@ namespace App {
       .setRanges([sheet.getRange(2,4,data.players.length,1)])
       .build();
     sheet.setConditionalFormatRules([rule]);
+  } function write_team_sheet(sheet: Sheet, data: GlobalData) {
+    return write_summary_sheet(sheet, data, false);
   }
 
   function get_clear_range(sheet: Sheet): {rows: number, cols: number} {
@@ -92,7 +96,7 @@ namespace App {
     ss: GoogleAppsScript.Spreadsheet.Spreadsheet, 
     id: number,
     writter: (x: Sheet, y: GlobalData)=>void,
-    data: GlobalData
+    data: GlobalData,
   ) {
     const sheet = ss.getSheetById(id);
     if (!sheet) { throw new Error(`Sheet ${id} not found`); }
@@ -110,6 +114,7 @@ namespace App {
 
     write_sheet(ss, GAME_SHEET_ID, write_games_sheet, data);
     write_sheet(ss, PLAYER_SHEET_ID, write_players_sheet, data);
-    write_sheet(ss, GENERAL_ID, write_general_sheet, data);
+    write_sheet(ss, GENERAL_ID, write_summary_sheet, data);
+    write_sheet(ss, TEAMS_ID, write_team_sheet, data);
   }
 }
