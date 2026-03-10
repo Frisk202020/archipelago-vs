@@ -6,15 +6,15 @@
     </body>
     <script>
         const main = document.getElementById("main");
-        const loading = document.createElement("p");
-        loading.textContent = "Loading...";
-        main.appendChild(loading);
+        const textbox = document.createElement("p");
+        textbox.textContent = "Chargement...";
+        main.appendChild(textbox);
     
-        let inputs = null;
+        let inputs = null; let iptBox = null;
         google.script.run
             .withSuccessHandler(fetchSuccessHandler)
             .withFailureHandler(fetchErrorHandler)
-            .get_colors();
+            .get_html_colors();
 
         function generateError(text) {
             const p = document.createElement("p");
@@ -24,12 +24,13 @@
 
         function btnHandler() {
             google.script.run
+                .withSuccessHandler(()=>google.script.host.close())
                 .withFailureHandler(setErrorHandler)
-                .set_colors(
-                    inputs[0].value, inputs[1].value,
-                    inputs[2].value, inputs[3].value,
-                    inputs[3].value,
-            );
+                .save_colors(inputs.map(((x)=>x.value)).join(";"));
+            textbox.textContent = "Sauvegarde...";
+            if (iptBox) {
+                iptBox.remove();
+            } 
         }
 
         function setErrorHandler(err) {
@@ -38,19 +39,21 @@
 
         function fetchSuccessHandler(colors) {
             if (
-                colors.win === undefined || 
-                colors.lose === undefined ||
-                colors.labels === undefined ||
+                colors.victory === undefined || 
+                colors.defeat === undefined ||
+                colors.label === undefined ||
                 colors.empty === undefined ||
-                colors.void === undefined
+                colors._void === undefined
             ) {
                 generateError("ERROR: Received colors object is missing properties");
             } else {
+                const outerDiv = document.createElement("div");
+
                 inputs = [
-                    {label: "Couleur du GOAT", value: colors.win}, 
-                    {label: "Couleur des Skill Issue", value: colors.lose}, 
-                    {label: "Couleur de la case neutre", value: colors.void}, 
-                    {label: "Couleur d'une cellule de texte", value: colors.labels}, 
+                    {label: "Couleur du GOAT", value: colors.victory}, 
+                    {label: "Couleur des Skill Issue", value: colors.defeat}, 
+                    {label: "Couleur de la case neutre", value: colors._void}, 
+                    {label: "Couleur d'une cellule de texte", value: colors.label}, 
                     {label: "Couleur d'une cellule 'x'", value: colors.empty}
                 ].map((x,i)=>{
                     const div = document.createElement("div");
@@ -59,23 +62,24 @@
 
                     ipt.type = "color"; ipt.name = i; ipt.value = x.value;
                     label.for = i; label.textContent = x.label;
-                    loading.style.opacity = 0;
-                    div.appendChild(ipt); div.appendChild(label); main.appendChild(div);
+                    textbox.textContent = "Remarque: vous devrez mettre à jour les données pour utiliser les nouvelles couleurs."
+                    div.appendChild(ipt); div.appendChild(label); outerDiv.appendChild(div);
+                    iptBox = div;
                     return ipt;
                 });
-
                 const div = document.createElement("div");
                 div.style.width = "100%"; div.style.display = "flex"; div.style.justifyContent = "center";
-
+                
                 const btn = document.createElement("btn");
                 btn.textContent = "Enregistrer";
                 btn.onclick = btnHandler;
-                btn.style.backgroundColor = "#f1dd68";
-                btn.style.border = "solid 2px";
-                btn.style.borderRadius = "10px";
-                btn.style.padding = "10px"
                 div.appendChild(btn);
-                main.appendChild(div);
+
+                outerDiv.appendChild(div);
+                main.appendChild(outerDiv);
+                iptBox = outerDiv;
+
+                main.appendChild(outerDiv);
             }
         } function fetchErrorHandler(err) {
             generateError("ERROR: Failed to fetch current colors -- " + err);
@@ -86,6 +90,11 @@
             margin: 3%;
         } btn:hover {
             cursor: pointer;
+        } btn {
+            background-color: #f1dd68;
+            border: solid 2px;
+            border-radius: 10px;
+            padding: 10px;
         }
     </style>
 </html>

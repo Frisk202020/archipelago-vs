@@ -1,5 +1,17 @@
+function get_html_colors() {
+  return App.get_hex_colors();
+} function save_colors(x) {
+  App.save_colors(x);
+} function reset_colors() {
+  App.reset_colors();
+} function init_html() {
+  const html = HtmlService.createHtmlOutputFromFile("index");
+  SpreadsheetApp.getUi()
+    .showModalDialog(html, "Palette de couleur")
+}
+
 function main() {
-    App.main();
+  App.main();
 }
 
 function onOpen() {
@@ -8,15 +20,6 @@ function onOpen() {
   ui.createMenu('Script de Frisk') // The name on the toolbar
     .addItem('Mettre à jour les données', 'main')
     .addItem('Palette de couleurs', 'init_html')
+    .addItem('Reinitialiser les couleurs', 'reset_colors')
     .addToUi();
-}
-
-function get_colors() {
-  return App.fetch_current_colors();
-} function set_colors() {
-  App.set_colors()
-} function init_html() {
-  const html = HtmlService.createHtmlOutputFromFile("index");
-  SpreadsheetApp.getUi()
-    .showModalDialog(html, "Palette de couleur")
 }

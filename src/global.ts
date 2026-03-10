@@ -1,14 +1,4 @@
 namespace App {
-    function interpolate_color(from: RGB, to: RGB, pRatio: number): string {
-        const out = new RGB(
-            from.r + pRatio * (to.r - from.r),
-            from.g + pRatio * (to.g - from.g),
-            from.b + pRatio * (to.b - from.b)
-        );
-
-        return out.to_hex();
-    };
-
     interface WinCount {
         wins: number,
         losses: number
@@ -81,6 +71,7 @@ namespace App {
         }
 
         get_game_display(): Display {
+            const colors = get_colors();
             const values = this.player_game_matrix.map(
                 (row, i)=>row.map(
                     (x, j)=>x >= 0 ? 100 * x / this.total_playthroughs_matrix[i][j] : -1
@@ -90,22 +81,23 @@ namespace App {
             return {
                 data: values.map((row)=>row.map((x)=>x === -1 ? "x" : `${x} %`)),
                 colors: values.map((row)=>row.map(
-                    (x)=>x === -1 ? COLORS.empty : interpolate_color(COLORS.lose, COLORS.win, x/100))
+                    (x)=>x === -1 ? colors.empty : interpolate(colors.defeat, colors.victory, x/100))
                 )
             }
         }
 
         get_player_display(): Display {
+            const stored_colors = get_colors();
             const data = Array<string[]>(); const colors = Array<string[]>();
             for (const row of this.player_player_matrix) {
                 const d = Array<string>(); const c = Array<string>();
                 for (const x  of row) {
                     if (x.wins === 0 && x.losses === 0) {
-                        d.push("x"); c.push(COLORS.empty);
+                        d.push("x"); c.push(stored_colors.empty);
                     } else {
                         const tot = x.wins + x.losses;
                         d.push(`${x.wins} / ${tot}`);
-                        c.push(interpolate_color(COLORS.lose, COLORS.win, x.wins / tot));
+                        c.push(interpolate(stored_colors.defeat, stored_colors.victory, x.wins / tot));
                     }
                 }
                 data.push(d); colors.push(c);

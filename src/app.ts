@@ -42,18 +42,20 @@ namespace App {
   }
 
   function write_general_sheet(sheet: Sheet, data: GlobalData) {
+    const colors = get_colors();
+
     get_first_row(sheet, 3).setValues([["Nombre de VS", "Victoires", "Score (%)"]]);
     get_first_column(sheet, data.players.length).setValues(players(data));
     sheet.getRange(2,2,data.players.length,3).setValues(data.get_general_display());
-    sheet.getRange(2,2,data.players.length,2).setBackgrounds(Array(data.players.length).fill(Array(2).fill(COLORS.empty)));
+    sheet.getRange(2,2,data.players.length,2).setBackgrounds(Array(data.players.length).fill(Array(2).fill(colors.empty)));
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMaxpointWithValue(
-        COLORS.win.to_hex(),
+        colors.victory.to_hex(),
         SpreadsheetApp.InterpolationType.NUMBER,
         '100',
       )
       .setGradientMinpointWithValue(
-        COLORS.lose.to_hex(),
+        colors.defeat.to_hex(),
         SpreadsheetApp.InterpolationType.NUMBER,
         '0',
       )

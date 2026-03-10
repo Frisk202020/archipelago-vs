@@ -1,40 +1,16 @@
 namespace App {
     type Range = GoogleAppsScript.Spreadsheet.Range;
-    export class RGB {
-        r: number; b: number; g: number;
-        constructor(r: number, g: number, b: number) {
-            this.r = r; this.g = g; this.b = b;
-        }
-
-        to_hex(): string {
-            return "#"+[
-                this.r, this.g, this.b
-            ].map((x)=>x.toString(16).padStart(2, "0")).join("");
-        } static from_hex(x: string): RGB {
-            const bigint = parseInt(x, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-
-            return new RGB(r,g,b);
-        }
-    }
-    const PADDING = 20; 
-    export const COLORS = {
-        win: new RGB(255, 215, 0),
-        lose: new RGB(248, 125, 133),
-        void: "#494848",
-        labels: "#989898",
-        empty: "#7e7d7d"
-    }
+    const PADDING = 20;
 
     export function shared_style(sheet: Sheet) {
+        const colors = get_colors();
         const range = sheet.getDataRange();
+
         center(range);
         resize(sheet, range);
-        sheet.getRange(1,1).setBackground(COLORS.void);
-        sheet.getRange(1,2,1,range.getLastColumn()-1).setBackground(COLORS.labels);
-        sheet.getRange(2,1,range.getLastRow()-1,1).setBackground(COLORS.labels);
+        sheet.getRange(1,1).setBackground(colors._void);
+        sheet.getRange(1,2,1,range.getLastColumn()-1).setBackground(colors.label);
+        sheet.getRange(2,1,range.getLastRow()-1,1).setBackground(colors.label);
     }
 
     function center(range: Range) {
