@@ -1,4 +1,4 @@
-namespace App {
+namespace App.Session {
     const game_sheet_ids = new Map<string, number>(); let next_g = 0;
     const games_ordered_array = Array<string>();
     const player_sheet_ids = new Map<string, number>(); let next_p = 0;

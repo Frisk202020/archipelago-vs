@@ -1,9 +1,9 @@
-namespace App {
+namespace App.Style {
     type Range = GoogleAppsScript.Spreadsheet.Range;
     const PADDING = 20;
 
     export function shared_style(sheet: Sheet) {
-        const colors = get_colors();
+        const colors = Color.get_colors();
         const range = sheet.getDataRange();
 
         center(range);

@@ -6,7 +6,7 @@ namespace App {
   const TEAMS_ID = 1879123301;
   const DEFAULT_BG = "#ffffff";
   let players_cache: string[][] | null = null;
-  function players(x: GlobalData) {
+  function players(x: Global.GlobalData) {
     if (players_cache) { return players_cache; }
 
     players_cache = x.players.map((x)=>[x]);
@@ -21,7 +21,7 @@ namespace App {
     return sheet.getRange(2, 1, rows, 1);
   }
 
-  function write_players_sheet(sheet: Sheet, data: GlobalData) {
+  function write_players_sheet(sheet: Sheet, data: Global.GlobalData) {
     const n = data.players.length;
     get_first_row(sheet, n).setValues([data.players]);
     get_first_column(sheet, n).setValues(players(data));
@@ -32,7 +32,7 @@ namespace App {
       .setBackgrounds(display.colors);
   }
 
-  function write_games_sheet(sheet: Sheet, data: GlobalData) {
+  function write_games_sheet(sheet: Sheet, data: Global.GlobalData) {
     get_first_row(sheet, data.games.length).setValues([data.games]);
     get_first_column(sheet, data.players.length).setValues(players(data));
 
@@ -42,8 +42,8 @@ namespace App {
       .setBackgrounds(display.colors);
   }
 
-  function write_summary_sheet(sheet: Sheet, data: GlobalData, forGeneral=true) {
-    const colors = get_colors();
+  function write_summary_sheet(sheet: Sheet, data: Global.GlobalData, forGeneral=true) {
+    const colors = Color.get_colors();
 
     get_first_row(sheet, 3).setValues([["Nombre de VS", "Victoires", "Score (%)"]]);
     get_first_column(sheet, data.players.length).setValues(players(data));
@@ -64,7 +64,7 @@ namespace App {
       .setRanges([sheet.getRange(2,4,data.players.length,1)])
       .build();
     sheet.setConditionalFormatRules([rule]);
-  } function write_team_sheet(sheet: Sheet, data: GlobalData) {
+  } function write_team_sheet(sheet: Sheet, data: Global.GlobalData) {
     return write_summary_sheet(sheet, data, false);
   }
 
@@ -95,22 +95,22 @@ namespace App {
   function write_sheet(
     ss: GoogleAppsScript.Spreadsheet.Spreadsheet, 
     id: number,
-    writter: (x: Sheet, y: GlobalData)=>void,
-    data: GlobalData,
+    writter: (x: Sheet, y: Global.GlobalData)=>void,
+    data: Global.GlobalData,
   ) {
     const sheet = ss.getSheetById(id);
     if (!sheet) { throw new Error(`Sheet ${id} not found`); }
     clear(sheet);
     
     writter(sheet, data);
-    shared_style(sheet);
+    Style.shared_style(sheet);
   } export function main() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const session_sheet = ss.getSheetById(SESSION_SHEET_ID);
 
     if (!session_sheet) { throw new Error("Session Sheet not found"); }
-    const session_data = parse_sheet(session_sheet);
-    const data = GlobalData.build_from_sessions(session_data);
+    const session_data = Session.parse_sheet(session_sheet);
+    const data = Global.GlobalData.build_from_sessions(session_data);
 
     write_sheet(ss, GAME_SHEET_ID, write_games_sheet, data);
     write_sheet(ss, PLAYER_SHEET_ID, write_players_sheet, data);

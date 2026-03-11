@@ -1,4 +1,4 @@
-namespace App {
+namespace App.Color {
     class RGB {
         r: number; b: number; g: number;
         constructor(r: number, g: number, b: number) {

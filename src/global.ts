@@ -1,4 +1,4 @@
-namespace App {
+namespace App.Global {
     interface WinCount {
         wins: number,
         losses: number
@@ -39,7 +39,7 @@ namespace App {
             this.games = games; this.players = players;
         }
         
-        static build_from_sessions(data: SessionResult): GlobalData {
+        static build_from_sessions(data: Session.SessionResult): GlobalData {
             const global = new GlobalData(data.games_array, data.players_array);
             for (const s of data.sessions) {
                 const g_id = data.game_ids.get(s.game)!;
@@ -82,7 +82,7 @@ namespace App {
         }
 
         get_game_display(): Display {
-            const colors = get_colors();
+            const colors = Color.get_colors();
             const values = this.player_game_matrix.map(
                 (row, i)=>row.map(
                     (x, j)=>x >= 0 ? 100 * x / this.total_playthroughs_matrix[i][j] : -1
@@ -92,13 +92,13 @@ namespace App {
             return {
                 data: values.map((row)=>row.map((x)=>x === -1 ? "x" : `${x} %`)),
                 colors: values.map((row)=>row.map(
-                    (x)=>x === -1 ? colors.empty : interpolate(colors.defeat, colors.victory, x/100))
+                    (x)=>x === -1 ? colors.empty : Color.interpolate(colors.defeat, colors.victory, x/100))
                 )
             }
         }
 
         get_player_display(): Display {
-            const stored_colors = get_colors();
+            const stored_colors = Color.get_colors();
             const data = Array<string[]>(); const colors = Array<string[]>();
             for (const row of this.player_player_matrix) {
                 const d = Array<string>(); const c = Array<string>();
@@ -108,7 +108,7 @@ namespace App {
                     } else {
                         const tot = x.wins + x.losses;
                         d.push(`${x.wins} / ${tot}`);
-                        c.push(interpolate(stored_colors.defeat, stored_colors.victory, x.wins / tot));
+                        c.push(Color.interpolate(stored_colors.defeat, stored_colors.victory, x.wins / tot));
                     }
                 }
                 data.push(d); colors.push(c);
