@@ -1,7 +1,7 @@
 function get_html_colors() {
   return App.Color.get_hex_colors();
 } function save_colors(x) {
-  App.Color.getUisave_colors(x);
+  App.Color.save_colors(x);
 } function reset_colors() {
   App.Color.reset_colors();
 } function init_html() {
