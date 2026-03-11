@@ -1,9 +1,9 @@
 function get_html_colors() {
-  return App.get_hex_colors();
+  return App.Color.get_hex_colors();
 } function save_colors(x) {
-  App.save_colors(x);
+  App.Color.getUisave_colors(x);
 } function reset_colors() {
-  App.reset_colors();
+  App.Color.reset_colors();
 } function init_html() {
   const html = HtmlService.createHtmlOutputFromFile("index");
   SpreadsheetApp.getUi()
