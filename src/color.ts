@@ -1,9 +1,10 @@
 namespace App.Color {
     class RGB {
-        r: number; b: number; g: number;
-        constructor(r: number, g: number, b: number) {
-            this.r = r; this.g = g; this.b = b;
-        }
+        constructor(
+            public r: number, 
+            public g: number, 
+            public b: number
+        ){}
 
         to_hex(): string {
             return "#"+[
@@ -29,17 +30,14 @@ namespace App.Color {
     };
 
     class ColorLibrary {
-        victory: RGB; defeat: RGB; _void: string;
-        label: string; empty: string;
         static service = PropertiesService.getScriptProperties();
-
         constructor(
-            victory: RGB, defeat: RGB, _void: string,
-            label: string, empty: string
-        ) {
-            this.victory = victory; this.defeat = defeat; this._void = _void;
-            this.label = label; this.empty = empty;
-        }
+            public victory: RGB, 
+            public defeat: RGB, 
+            public _void: string,
+            public label: string, 
+            public empty: string
+        ) {}
 
         static hex_from_storage(key: "empty" | "void" | "label", fallback: string) {
             const x = this.service.getProperty(key);
