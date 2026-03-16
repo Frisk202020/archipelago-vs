@@ -1,3 +1,6 @@
 dist/code.js
 node_modules
 todo.md
+bot/target/
+bot/Cargo.lock
+bot/config.json
