@@ -3,4 +3,4 @@ node_modules
 todo.md
 bot/target/
 bot/Cargo.lock
-bot/config.json
+bot/*.json
