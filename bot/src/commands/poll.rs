@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use crate::util::{Context, Error};
 use poise::serenity_prelude as serenity;
-use ::serenity::all::{CreatePoll, CreatePollAnswer};
+use ::serenity::all::{ChannelId, CreatePoll, CreatePollAnswer};
+
+const ARCHIPELAGO_CHANNEL: u64 = 1465096954970112083;
 
 #[poise::command(slash_command)]
 pub(crate) async fn poll(
@@ -23,7 +25,8 @@ pub(crate) async fn poll(
         .duration(Duration::from_secs(3600 * 24 * 5))
         .allow_multiselect();
     let message = serenity::CreateMessage::new().poll(poll);
-    ctx.say("Perdu").await?;
-    ctx.channel_id().send_message(ctx.http(), message).await?;
+    
+    ChannelId::new(ARCHIPELAGO_CHANNEL).send_message(ctx.http(), message).await?;
+    ctx.say("C'est fait, mais t'as perdu").await?;
     Ok(())
 }

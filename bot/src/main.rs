@@ -6,7 +6,7 @@ use poise::serenity_prelude as serenity;
 use serenity::{all::GuildId, json};
 use serde::Deserialize;
 
-use crate::{commands::{pick_random_game, poll}, util::RequestData}; 
+use crate::{commands::{add_game, list_games, pick_random_game, poll, remove_game}, util::RequestData}; 
 
 #[derive(Deserialize)]
 struct Config {
@@ -22,7 +22,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![poll(), pick_random_game()],
+            commands: vec![poll(), pick_random_game(), add_game(), remove_game(), list_games()],
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
