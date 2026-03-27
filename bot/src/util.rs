@@ -1,3 +1,19 @@
+use std::fs;
+
+use serde::{Serialize, de::DeserializeOwned};
+
 pub(crate) struct RequestData {}
 pub(crate) type Error = Box<dyn std::error::Error + Send + Sync>;
 pub(crate) type Context<'a> = poise::Context<'a, RequestData, Error>;
+
+pub(crate) fn get_json_data<T: DeserializeOwned>(path: &str) -> Result<T, Error> {
+    let raw_data = fs::read_to_string(path)?;
+    Ok(serde_json::from_str::<T>(raw_data.as_str())?)
+}
+
+pub(crate) fn write_json_data<T: Serialize>(data: &T, path: &str) -> Result<(), Error> {
+    let update = serde_json::to_string(data)?;
+    fs::write(path, update)?;
+    
+    Ok(())
+}

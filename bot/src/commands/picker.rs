@@ -1,11 +1,14 @@
-use std::{collections::HashMap, fs};
+use std::collections::HashMap;
 use rand::Rng;
-use crate::util::{Context, Error};
+use crate::util::{Context, Error, get_json_data, write_json_data};
 
 type Data = HashMap<String, Vec<String>>;
 
-const PATH: &'static str = "data.json";
+const PATH: &'static str = "data/games.json";
 const GIF: &'static str = "https://giphy.com/gifs/spongebob-26ufnwz3wDUli7GU0";
+
+fn get_data() -> Result<Data, Error> { get_json_data(PATH) }
+fn write_data(data: &Data) -> Result<(), Error> { write_json_data(data, PATH) }
 
 #[poise::command(slash_command)]
 pub(crate) async fn pick_random_game(
@@ -92,18 +95,6 @@ pub(crate) async fn list_games(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     ctx.say(msg).await?;
-    Ok(())
-}
-
-fn get_data() -> Result<Data, Error> {
-    let raw_data = fs::read_to_string(PATH)?;
-    Ok(serde_json::from_str::<Data>(raw_data.as_str())?)
-}
-
-fn write_data(data: &Data) -> Result<(), Error> {
-    let update = serde_json::to_string(data)?;
-    fs::write(PATH, update)?;
-    
     Ok(())
 }
 
