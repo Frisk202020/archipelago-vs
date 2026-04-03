@@ -4,3 +4,4 @@ todo.md
 bot/target/
 bot/Cargo.lock
 bot/data/config.json
+*/.vscode/*

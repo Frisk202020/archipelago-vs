@@ -1,10 +1,13 @@
 use std::fs;
 
 use serde::{Serialize, de::DeserializeOwned};
+use serenity::all::UserId;
 
 pub(crate) struct RequestData {}
 pub(crate) type Error = Box<dyn std::error::Error + Send + Sync>;
 pub(crate) type Context<'a> = poise::Context<'a, RequestData, Error>;
+
+pub(crate) const DEVELOPER: UserId = UserId::new(526147484716761098);
 
 pub(crate) fn get_json_data<T: DeserializeOwned>(path: &str) -> Result<T, Error> {
     let raw_data = fs::read_to_string(path)?;
