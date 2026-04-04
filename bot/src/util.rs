@@ -5,6 +5,7 @@ use serenity::all::UserId;
 
 pub(crate) struct RequestData {}
 pub(crate) type Error = Box<dyn std::error::Error + Send + Sync>;
+pub(crate) type Output = Result<(), Error>;
 pub(crate) type Context<'a> = poise::Context<'a, RequestData, Error>;
 
 pub(crate) const DEVELOPER: UserId = UserId::new(526147484716761098);

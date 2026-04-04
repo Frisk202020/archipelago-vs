@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::util::{Context, Error};
+use crate::util::{Context, Output};
 use poise::serenity_prelude as serenity;
 use ::serenity::all::{ChannelId, CreatePoll, CreatePollAnswer};
 
@@ -9,7 +9,7 @@ const ARCHIPELAGO_CHANNEL: u64 = 1465096954970112083;
 #[poise::command(slash_command)]
 pub(crate) async fn poll(
     ctx: Context<'_>,
-) -> Result<(), Error> {
+) -> Output {
     let poll = CreatePoll::new()
         .question("Archipelago ce week-end ?")
         .answers(

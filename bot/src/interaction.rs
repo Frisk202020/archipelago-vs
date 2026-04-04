@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use serenity::all::{ButtonStyle, CreateActionRow, CreateButton, CreateInteractionResponse, EditMessage, Http, Interaction, Mentionable};
 use strum::{AsRefStr, EnumString};
 
-use crate::{commands::{handle_replace_finish_time, handle_replace_session_data}, util::{DEVELOPER, Error}};
+use crate::{commands::{handle_replace_finish_time, handle_replace_session_data}, util::{DEVELOPER, Output}};
 
 #[derive(EnumString, AsRefStr, PartialEq)]
 pub(crate) enum ArchibotButtonInteraction {
@@ -22,7 +22,7 @@ pub(crate) enum ArchibotButtonInteraction {
     }
 }
 
-pub(crate) async fn handle(http: Arc<Http>, x: &Interaction) -> Result<(), Error> {
+pub(crate) async fn handle(http: Arc<Http>, x: &Interaction) -> Output {
     match x {
         Interaction::Component(x) => {
             if let Ok(variant) = ArchibotButtonInteraction::from_str(&x.data.custom_id) {

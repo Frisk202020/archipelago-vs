@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use rand::Rng;
-use crate::util::{Context, Error, get_json_data, write_json_data};
+use crate::util::{Context, Error, Output, get_json_data, write_json_data};
 
 type Data = HashMap<String, Vec<String>>;
 
@@ -8,12 +8,12 @@ const PATH: &'static str = "data/games.json";
 const GIF: &'static str = "https://giphy.com/gifs/spongebob-26ufnwz3wDUli7GU0";
 
 fn get_data() -> Result<Data, Error> { get_json_data(PATH) }
-fn write_data(data: &Data) -> Result<(), Error> { write_json_data(data, PATH) }
+fn write_data(data: &Data) -> Output { write_json_data(data, PATH) }
 
 #[poise::command(slash_command)]
 pub(crate) async fn pick_random_game(
     ctx: Context<'_>,
-) -> Result<(), Error> {
+) -> Output {
     let data = get_data()?;
 
     ctx.say(get_message(&data, ctx)).await?;
@@ -24,7 +24,7 @@ pub(crate) async fn pick_random_game(
 pub(crate) async fn add_game(
     ctx: Context<'_>,
     #[description = "Un jeu goatesque à ajouter à ta liste"] game: String
-) -> Result<(), Error> {
+) -> Output {
     let mut data = get_data()?;
     let name = ctx.author().name.as_str();
     if let Some(games) = data.get_mut(name) {
@@ -49,7 +49,7 @@ pub(crate) async fn add_game(
 pub(crate) async fn remove_game(
     ctx: Context<'_>,
     #[description = "Le nom du jeu à dégager"] game: String,
-) -> Result<(), Error> {
+) -> Output {
     let mut data = get_data()?;
     let name = ctx.author().name.as_str();
 
@@ -79,7 +79,7 @@ pub(crate) async fn remove_game(
 }
 
 #[poise::command(slash_command)]
-pub(crate) async fn list_games(ctx: Context<'_>) -> Result<(), Error> {
+pub(crate) async fn list_games(ctx: Context<'_>) -> Output {
     let data = get_data()?;
     let msg = if let Some(games) = data.get(ctx.author().name.as_str()) {
         if games.is_empty() {

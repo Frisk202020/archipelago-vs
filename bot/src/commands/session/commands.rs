@@ -1,10 +1,12 @@
 use poise::CreateReply;
 use serenity::all::{CreateActionRow, Mentionable, User};
 
-use crate::{commands::session::data::Data, interaction::ArchibotButtonInteraction, util::{Context, Error}};
+use crate::{commands::session::data::Data, interaction::ArchibotButtonInteraction, util::{Context, Output}};
+
+const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
 
 #[poise::command(slash_command)]
-pub(crate) async fn start_session(ctx: Context<'_>) -> Result<(), Error> {
+pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
     let data = if let Ok(data) = Data::get() { data } else {
         let data = Data::default();
         data.write()?;
@@ -33,7 +35,7 @@ pub(crate) async fn start_session(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[poise::command(slash_command)]
-pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Result<(), Error> {
+pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Output {
     if let Ok(mut data) = Data::get() { 
         if !data.active {
             ctx.say("La session est terminée, recommencez une nouvelle partie avec `start_session`.").await?;
@@ -43,7 +45,7 @@ pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Result<(),
         let user = player.as_ref().unwrap_or(ctx.author());
         if let Some(end) = data.finish(user.display_name(), false) {
             data.write()?;
-            ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(end))).await?;
+            ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(&end))).await?;
         } else {
             ctx.send(
                 CreateReply::default()
@@ -57,8 +59,24 @@ pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Result<(),
             ).await?;
         }
     } else {
-        ctx.say("Commence peut-être par lancer une session hein.").await?;
+        ctx.say(SESSION_DATA_MISSING_MSG).await?;
     }
     
+    Ok(())
+}
+
+#[poise::command(slash_command)]
+pub(crate) async fn get_time(ctx: Context<'_>, player: Option<User>) -> Output {
+    if let Ok(data) = Data::get() {
+        let target = player.as_ref().unwrap_or(ctx.author());
+        if let Some(end) = data.get_time(target.display_name()) {
+            ctx.say(format!("{} a fini en {} !", target.mention(), data.display_elapsed(end))).await?;
+        } else {
+            ctx.say(format!("{} n'a pas finit.", target.mention())).await?;
+        }
+    } else {
+        ctx.say(SESSION_DATA_MISSING_MSG).await?;
+    }
+
     Ok(())
 }
