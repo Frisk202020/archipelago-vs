@@ -4,4 +4,7 @@ mod session;
 
 pub(crate) use poll::poll;
 pub(crate) use picker::{pick_random_game, add_game, remove_game, list_games};
-pub(crate) use session::{commands::start_session, handlers::handle_replace_session_data};
+pub(crate) use session::{
+    commands::{start_session, finish}, 
+    handlers::{handle_replace_session_data, handle_replace_finish_time}
+};
