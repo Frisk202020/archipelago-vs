@@ -8,7 +8,7 @@ use ::serenity::all::{Context, FullEvent};
 use serenity::{all::GuildId, json};
 use serde::Deserialize;
 
-use crate::{commands::{add_game, finish, get_time, list_games, pick_random_game, poll, remove_game, start_session}, util::{Output, RequestData}}; 
+use crate::{commands::{add_game, add_tms, finish, get_time, list_games, list_tms, pick_random_game, poll, remove_game, session_duration, start_session}, util::{Output, RequestData}}; 
 
 #[derive(Deserialize)]
 struct Config {
@@ -38,7 +38,7 @@ async fn main() {
             commands: vec![
                 poll(), pick_random_game(), add_game(), 
                 remove_game(), list_games(), start_session(),
-                finish(), get_time()
+                finish(), get_time(), add_tms(), list_tms(), session_duration()
             ],
             event_handler: |ctx, event, _, _| Box::pin(event_handler(ctx, event)),
             ..Default::default()

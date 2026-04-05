@@ -21,3 +21,10 @@ pub(crate) fn write_json_data<T: Serialize>(data: &T, path: &str) -> Result<(), 
     
     Ok(())
 }
+
+pub(crate) fn vec_to_list(x: &Vec<String>) -> String {
+    x.iter()
+        .into_iter()
+        .map(|x| format!("- {x}\n"))
+        .collect::<String>()
+}

@@ -7,8 +7,7 @@ use crate::{commands::session::data::Data, util::Output};
 pub(crate) async fn handle_replace_session_data(
     x: &ComponentInteraction, http: Arc<Http>
 ) -> Output {
-    let data = Data::default();
-    data.write()?;
+    Data::write_new()?;
     
     x.create_response(http, CreateInteractionResponse::Message(
         CreateInteractionResponseMessage::new().content("Allez hop c'est parti")
@@ -24,8 +23,7 @@ pub(crate) async fn handle_replace_finish_time(
 
     let target = x.message.mentions.get(0);
     if let Some(target) = target {
-        let end = data.finish(target.display_name(), true).unwrap();
-        data.write()?;
+        let end = data.finish(&target.name, true)?.unwrap();
 
         x.create_response(http, CreateInteractionResponse::Message(
             CreateInteractionResponseMessage::new().content(format!("GG {}, tu as fins en {}", target.mention(), data.display_elapsed(&end)))

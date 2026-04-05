@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use rand::Rng;
-use crate::util::{Context, Error, Output, get_json_data, write_json_data};
+use crate::util::{Context, Error, Output, get_json_data, vec_to_list, write_json_data};
 
 type Data = HashMap<String, Vec<String>>;
 
@@ -85,10 +85,7 @@ pub(crate) async fn list_games(ctx: Context<'_>) -> Output {
         if games.is_empty() {
             GIF.to_string()
         } else {
-            games.iter()
-                .into_iter()
-                .map(|x| format!("- {x}\n"))
-                .collect::<String>()
+            vec_to_list(games)
         }
     } else {
         GIF.to_string()
