@@ -56,7 +56,6 @@ pub(crate) struct Data {
 
     pub(crate) fn add_tms(&mut self, player: &str, label: &str) -> Output {
         let entry = format!("{label}: {}", self.display_elapsed(&Utc::now().naive_utc()));
-        println!("{}", Utc::now().naive_utc());
 
         if let Some(entries) = self.timestamps.get_mut(player) {
             entries.push(entry);

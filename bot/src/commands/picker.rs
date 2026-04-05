@@ -79,9 +79,11 @@ pub(crate) async fn remove_game(
 }
 
 #[poise::command(slash_command)]
-pub(crate) async fn list_games(ctx: Context<'_>) -> Output {
+pub(crate) async fn list_games(ctx: Context<'_>, player: Option<User>) -> Output {
     let data = get_data()?;
-    let msg = if let Some(games) = data.get(ctx.author().name.as_str()) {
+    let player = player.as_ref().unwrap_or(ctx.author());
+    
+    let msg = if let Some(games) = data.get(player.name.as_str()) {
         if games.is_empty() {
             GIF.to_string()
         } else {
