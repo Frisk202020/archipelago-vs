@@ -7,6 +7,9 @@ use crate::{commands::session::data::Data, interaction::ArchibotButtonInteractio
 const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
 const GIF: &'static str = "https://giphy.com/gifs/football-lost-hashtagunited-jU9OCvBiO1besabUKU";
 
+/// Lancer le chrono pour un nouveau versus.
+/// 
+/// Cela supprime les données relatives à une précédente session.
 #[poise::command(slash_command)]
 pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
     if Data::get().is_err() {
@@ -31,8 +34,11 @@ pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
     Ok(())
 }
 
+/// Marquer la victoire d'un joueur (sauvegarder le temps de jeu actuel).
 #[poise::command(slash_command)]
-pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Output {
+pub(crate) async fn finish(
+    ctx: Context<'_>, 
+    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>) -> Output {
     if let Ok(mut data) = Data::get() { 
         let user = player.as_ref().unwrap_or(ctx.author());
         
@@ -57,8 +63,12 @@ pub(crate) async fn finish(ctx: Context<'_>, player: Option<User>) -> Output {
     Ok(())
 }
 
+/// Afficher le temps de partie enregistré pour un joueur.
 #[poise::command(slash_command)]
-pub(crate) async fn get_time(ctx: Context<'_>, player: Option<User>) -> Output {
+pub(crate) async fn get_time(
+    ctx: Context<'_>, 
+    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
+) -> Output {
     if let Ok(data) = Data::get() {
         let target = player.as_ref().unwrap_or(ctx.author());
         if let Some(end) = data.get_time(&target.name) {
@@ -73,8 +83,13 @@ pub(crate) async fn get_time(ctx: Context<'_>, player: Option<User>) -> Output {
     Ok(())
 }
 
+/// Ajouter un split sur la run d'un joueur.
 #[poise::command(slash_command)]
-pub(crate) async fn add_tms(ctx: Context<'_>, label: String, player: Option<User>) -> Output {
+pub(crate) async fn add_tms(
+    ctx: Context<'_>, 
+    #[description = "Description du split"] label: String, 
+    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
+) -> Output {
     if let Ok(mut data) = Data::get() {
         let name = player.as_ref().map(|x| &x.name).unwrap_or(&ctx.author().name);
         data.add_tms(name.as_str(), label.as_str())?;
@@ -86,8 +101,12 @@ pub(crate) async fn add_tms(ctx: Context<'_>, label: String, player: Option<User
     Ok(())
 }
 
+/// Afficher la liste de tous les splits enregistrés.
 #[poise::command(slash_command)]
-pub(crate) async fn list_tms(ctx: Context<'_>, player: Option<User>) -> Output {
+pub(crate) async fn list_tms(
+    ctx: Context<'_>, 
+    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
+) -> Output {
     let res = if let Ok(data) = Data::get() {
         let user = player.as_ref().unwrap_or(ctx.author());
         if let Some(tms) = data.get_tms(&user.name) {
@@ -103,6 +122,7 @@ pub(crate) async fn list_tms(ctx: Context<'_>, player: Option<User>) -> Output {
     Ok(())
 }
 
+/// Afficher la durée de la session en cours.
 #[poise::command(slash_command)]
 pub(crate) async fn session_duration(ctx: Context<'_>) -> Output {
     let res = if let Ok(data) = Data::get() {

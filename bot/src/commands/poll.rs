@@ -6,6 +6,9 @@ use ::serenity::all::{ChannelId, CreatePoll, CreatePollAnswer};
 
 const ARCHIPELAGO_CHANNEL: u64 = 1465096954970112083;
 
+/// Lancer un sondage pour l'archipelago du week-end prochain.
+/// 
+/// Ce message sera envoyé dans #archipelago
 #[poise::command(slash_command)]
 pub(crate) async fn poll(
     ctx: Context<'_>,

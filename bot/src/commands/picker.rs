@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use rand::Rng;
+use serenity::all::{Mentionable, User};
 use crate::util::{Context, Error, Output, get_json_data, vec_to_list, write_json_data};
 
 type Data = HashMap<String, Vec<String>>;
@@ -10,6 +11,9 @@ const GIF: &'static str = "https://giphy.com/gifs/spongebob-26ufnwz3wDUli7GU0";
 fn get_data() -> Result<Data, Error> { get_json_data(PATH) }
 fn write_data(data: &Data) -> Output { write_json_data(data, PATH) }
 
+/// Choisir un jeu aléatoire parmi la liste de jeux enregistrée du client.
+/// 
+/// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
 pub(crate) async fn pick_random_game(
     ctx: Context<'_>,
@@ -20,6 +24,9 @@ pub(crate) async fn pick_random_game(
     Ok(())
 }
 
+/// Ajouter un jeu à la bibliothèque de cet utilisateur. 
+/// 
+/// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
 pub(crate) async fn add_game(
     ctx: Context<'_>,
@@ -45,6 +52,10 @@ pub(crate) async fn add_game(
     Ok(())
 }
 
+/// Enlever un jeu de la bibliothèque du client
+/// 
+/// Attention : l'orthographe du jeu à enlever doit exactement correspondre.
+/// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
 pub(crate) async fn remove_game(
     ctx: Context<'_>,
@@ -78,8 +89,15 @@ pub(crate) async fn remove_game(
     Ok(())
 }
 
+/// Afficher tous les jeux enregistrés pour un utilisateur.
+/// 
+/// Cet commande supporte l'accès délégué. Si le paramètre `player` n'est pas précisé,
+/// la commande est appliquée au client.
 #[poise::command(slash_command)]
-pub(crate) async fn list_games(ctx: Context<'_>, player: Option<User>) -> Output {
+pub(crate) async fn list_games(
+    ctx: Context<'_>, 
+    #[description = "L'utilisateur client, par défaut celui à l'origine de cette requête"] player: Option<User>
+) -> Output {
     let data = get_data()?;
     let player = player.as_ref().unwrap_or(ctx.author());
     
@@ -93,7 +111,7 @@ pub(crate) async fn list_games(ctx: Context<'_>, player: Option<User>) -> Output
         GIF.to_string()
     };
 
-    ctx.say(msg).await?;
+    ctx.say(format!("Jeux enregistrés pour {} :\n{msg}", player.mention())).await?;
     Ok(())
 }
 
