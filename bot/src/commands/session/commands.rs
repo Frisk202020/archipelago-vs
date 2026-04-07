@@ -1,8 +1,10 @@
 use chrono::Utc;
-use poise::CreateReply;
-use serenity::all::{CreateActionRow, Mentionable, User};
+use serenity::all::{Mentionable, User};
 
-use crate::{commands::session::data::Data, interaction::ArchibotButtonInteraction, util::{Context, Output, vec_to_list}};
+use crate::{
+    commands::session::{data::Data, interaction::SessionInteraction}, 
+    util::{Context, Output, vec_to_list}
+};
 
 const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
 const GIF: &'static str = "https://giphy.com/gifs/football-lost-hashtagunited-jU9OCvBiO1besabUKU";
@@ -18,18 +20,23 @@ pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
         return Ok(());
     };
 
-    let title = "Pour info une session est en cours selon mes données, et procéder va tout foutre à la poubelle. T'es sur de ton coup ?";
-
-    ctx.send(
-        CreateReply::default()
-            .content(title)
-            .components(vec![
-                CreateActionRow::Buttons(vec![
-                    ArchibotButtonInteraction::ReplaceSessionAccept.button(),
-                    ArchibotButtonInteraction::ReplaceSessionDecline.button()
-                ])
-            ])
+    let res = SessionInteraction::handle_interaction(
+        ctx,
+        "Pour info une session est en cours selon mes données, et procéder va tout foutre à la poubelle. T'es sur de ton coup ?",
+        vec![SessionInteraction::StartAccept, SessionInteraction::StartDeny]
     ).await?;
+
+    if let Some(res) = res {
+        match res {
+            SessionInteraction::StartAccept => {
+                Data::write_new()?;
+                ctx.say("Hop là c'est parti").await?;
+            },
+            _ => {},
+        }
+    } else {
+        ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+    }
 
     Ok(())
 }
@@ -45,16 +52,23 @@ pub(crate) async fn finish(
         if let Some(end) = data.finish(&user.name, false)? {
             ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(&end))).await?;
         } else {
-            ctx.send(
-                CreateReply::default()
-                    .content(format!("Mais... {} avait déjà finit, on remplace par ce nouveau temps ?", user.mention()))
-                    .components(vec![
-                        CreateActionRow::Buttons(vec![
-                            ArchibotButtonInteraction::ReplaceFinishTimeAccept.button(),
-                            ArchibotButtonInteraction::ReplaceFinishTimeDecline.button()
-                        ])
-                    ])
+            let res = SessionInteraction::handle_interaction(
+                ctx, 
+                &format!("Mais... {} avait déjà finit, on remplace par ce nouveau temps ?", user.mention()),
+                vec![SessionInteraction::FinishAccept, SessionInteraction::FinishDeny]
             ).await?;
+
+            if let Some(res) = res {
+                match res {
+                    SessionInteraction::FinishAccept => {
+                        let end = data.finish(&user.name, true)?.unwrap();
+                        ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(&end))).await?;
+                    },
+                    _ => {},
+                }
+            } else {
+                ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+            }
         }
     } else {
         ctx.say(SESSION_DATA_MISSING_MSG).await?;
