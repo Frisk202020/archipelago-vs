@@ -3,30 +3,63 @@ use std::collections::HashMap;
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::util::{Error, Output, get_json_data, write_json_data};
+use crate::{commands::session::{status::Status, team_setup::TeamSetup}, util::{Error, Output, get_json_data, write_json_data}};
 
 const PATH: &'static str = "data/session.json";
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Data {
+    status: Status,
+    team_setup: TeamSetup,
     pub(crate) start_time: NaiveDateTime,
     pub(crate) timestamps: HashMap<String, Vec<String>>,
     finished: HashMap<String, NaiveDateTime>
 } impl Data {
+    pub(crate) fn team_setup(&self) -> &TeamSetup { &self.team_setup }
+
+    pub(crate) fn is_closed(&self) -> bool { 
+        match self.status {
+            Status::Closed | Status::Pushed => true,
+            _ => false
+        } 
+    }
+    pub(crate) fn is_building(&self) -> bool {
+        if let Status::Building = self.status { true } else { false }
+    }
+
     pub(crate) fn get() -> Result<Self, Error> { get_json_data(PATH) }
     fn write(&self) -> Output { write_json_data(self, PATH) }
 
-    fn default() -> Self {
+    fn new(team_size: usize) -> Self {
         Self { 
+            status: Status::Building,
+            team_setup: TeamSetup::new(team_size),
             start_time: Utc::now().naive_utc(),
             timestamps: HashMap::new(),
             finished: HashMap::new()
         }
     }
 
-    pub(crate) fn write_new() -> Output {
-        let x = Self::default();
+    pub(crate) fn write_new(team_size: usize) -> Output {
+        let x = Self::new(team_size);
         x.write()
+    }
+
+    fn handle_setup_mutation(&mut self, res: bool) -> Result<bool, Error> {
+        if res {
+            self.write()?;
+            Ok(true)
+        } else { Ok(false) }
+    }
+
+    pub(crate) fn set_games(&mut self, games: Vec<String>) -> Result<bool, Error> {
+        let res = self.team_setup.set_games(games);
+        self.handle_setup_mutation(res)
+    }
+
+    pub(crate) fn add_team(&mut self, team: Vec<String>) -> Result<bool, Error> {
+        let res = self.team_setup.add_team(team);
+        self.handle_setup_mutation(res)
     }
     
     pub(crate) fn finish(&mut self, player: &str, force: bool) -> Result<Option<NaiveDateTime>, Error> {

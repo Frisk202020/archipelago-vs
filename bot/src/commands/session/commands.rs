@@ -9,14 +9,12 @@ use crate::{
 const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
 const GIF: &'static str = "https://giphy.com/gifs/football-lost-hashtagunited-jU9OCvBiO1besabUKU";
 
-/// Lancer le chrono pour un nouveau versus.
-/// 
-/// Cela supprime les données relatives à une précédente session.
 #[poise::command(slash_command)]
-pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
-    if Data::get().is_err() {
-        Data::write_new()?;
-        ctx.say("C'est tout bon").await?;
+pub(crate) async fn init_session(ctx: Context<'_>, team_size: usize) -> Output {
+    let data = Data::get();
+    if data.is_err() || data.unwrap().is_closed() {
+        Data::write_new(team_size)?;
+        ctx.say("Session initiée. Pour plus de détail sur la construction de la session, lancez `help_session`").await?;
         return Ok(());
     };
 
@@ -29,7 +27,7 @@ pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
     if let Some(res) = res {
         match res {
             SessionInteraction::StartAccept => {
-                Data::write_new()?;
+                Data::write_new(team_size)?;
                 ctx.say("Hop là c'est parti").await?;
             },
             _ => {},
@@ -40,6 +38,71 @@ pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
 
     Ok(())
 }
+
+#[poise::command(slash_command)]
+pub(crate) async fn set_session_games(ctx: Context<'_>, games: Vec<String>) -> Output {
+    let mut data = Data::get()?;
+    if !data.is_building() {
+        ctx.say("Commence déjà par initier une nouvelle session").await?;
+        return Ok(());
+    }
+
+    let reply = 
+        if data.set_games(games)? { ":thumbsup:".to_string() }
+        else { format!("Je m'attends à recevoir {} jeux.", data.team_setup().team_size()) };
+
+    ctx.say(reply).await?;
+    Ok(())
+}
+
+#[poise::command(slash_command)]
+pub(crate) async fn add_team(ctx: Context<'_>, team: Vec<User>) -> Output {
+    let team = team.into_iter().map(|x| x.display_name().to_string()).collect();
+    let mut data = Data::get()?;
+    if !data.is_building() {
+        ctx.say("Commence déjà par initier une nouvelle session").await?;
+        return Ok(());
+    }
+
+    let reply = 
+        if data.add_team(team)? { ":thumbsup:".to_string() }
+        else { format!("Je m'attends à une équipe de {} joueurs.", data.team_setup().team_size()) };
+   
+    ctx.say(reply).await?;
+    Ok(())
+}
+
+/// Lancer le chrono pour un nouveau versus.
+/// 
+/// Cela supprime les données relatives à une précédente session.
+// #[poise::command(slash_command)]
+// pub(crate) async fn start_session(ctx: Context<'_>) -> Output {
+//     if Data::get().is_err() {
+//         Data::write_new()?;
+//         ctx.say("C'est tout bon").await?;
+//         return Ok(());
+//     };
+
+//     let res = SessionInteraction::handle_interaction(
+//         ctx,
+//         "Pour info une session est en cours selon mes données, et procéder va tout foutre à la poubelle. T'es sur de ton coup ?",
+//         vec![SessionInteraction::StartAccept, SessionInteraction::StartDeny]
+//     ).await?;
+
+//     if let Some(res) = res {
+//         match res {
+//             SessionInteraction::StartAccept => {
+//                 Data::write_new()?;
+//                 ctx.say("Hop là c'est parti").await?;
+//             },
+//             _ => {},
+//         }
+//     } else {
+//         ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+//     }
+
+//     Ok(())
+// }
 
 /// Marquer la victoire d'un joueur (sauvegarder le temps de jeu actuel).
 #[poise::command(slash_command)]

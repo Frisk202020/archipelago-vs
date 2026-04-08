@@ -9,12 +9,8 @@ use serenity::{all::GuildId, json};
 use serde::Deserialize;
 
 use crate::{commands::{
-    add_game, add_tms, finish, get_time, list_games, list_tms, 
-    pick_random_game, poll, remove_game, session_duration, start_session
-}, util::{
-    //Output, 
-    RequestData
-}}; 
+    add_game, add_team, add_tms, finish, get_time, init_session, list_games, list_tms, pick_random_game, poll, remove_game, session_duration, set_session_games
+}, util::RequestData}; 
 
 #[derive(Deserialize)]
 struct Config {
@@ -43,8 +39,9 @@ async fn main() {
         .options(poise::FrameworkOptions {
             commands: vec![
                 poll(), pick_random_game(), add_game(), 
-                remove_game(), list_games(), start_session(),
-                finish(), get_time(), add_tms(), list_tms(), session_duration()
+                remove_game(), list_games(), //start_session(),
+                finish(), get_time(), add_tms(), list_tms(), session_duration(),
+                init_session(), set_session_games(), add_team()
             ],
             //event_handler: |ctx, event, _, _| Box::pin(event_handler(ctx, event)),
             ..Default::default()
