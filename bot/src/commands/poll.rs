@@ -10,7 +10,7 @@ const ARCHIPELAGO_CHANNEL: u64 = 1465096954970112083;
 /// 
 /// Ce message sera envoyé dans #archipelago
 #[poise::command(slash_command)]
-pub(crate) async fn poll(
+pub async fn poll(
     ctx: Context<'_>,
 ) -> Output {
     let poll = CreatePoll::new()

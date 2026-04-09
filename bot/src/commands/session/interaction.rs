@@ -7,7 +7,7 @@ use strum::{AsRefStr, EnumString};
 use crate::util::{Context, Error};
 
 #[derive(EnumString, AsRefStr)]
-pub(crate) enum SessionInteraction {
+pub enum SessionInteraction {
     StartAccept,
     StartDeny,
     FinishAccept,
@@ -24,7 +24,7 @@ pub(crate) enum SessionInteraction {
         CreateButton::new(self.as_ref()).label(params.0).style(params.1).disabled(disabled)
     }
 
-    pub(crate) async fn handle_interaction(ctx: Context<'_>, title: &str, interactions: Vec<Self>) -> Result<Option<Self>, Error> {
+    pub async fn handle_interaction(ctx: Context<'_>, title: &str, interactions: Vec<Self>) -> Result<Option<Self>, Error> {
         let buttons = interactions.into_iter()
             .map(|x| x.button(false))
             .collect::<Vec<_>>();

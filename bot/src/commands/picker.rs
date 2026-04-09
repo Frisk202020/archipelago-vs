@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use rand::Rng;
 use serenity::all::{Mentionable, User};
-use crate::util::{Context, Error, Output, get_json_data, vec_to_list, write_json_data};
+use crate::util::{Context, Error, Output, THUMB, get_json_data, vec_to_list, write_json_data};
 
 type Data = HashMap<String, Vec<String>>;
 
@@ -15,7 +15,7 @@ fn write_data(data: &Data) -> Output { write_json_data(data, PATH) }
 /// 
 /// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
-pub(crate) async fn pick_random_game(
+pub async fn pick_random_game(
     ctx: Context<'_>,
 ) -> Output {
     let data = get_data()?;
@@ -28,7 +28,7 @@ pub(crate) async fn pick_random_game(
 /// 
 /// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
-pub(crate) async fn add_game(
+pub async fn add_game(
     ctx: Context<'_>,
     #[description = "Un jeu goatesque à ajouter à ta liste"] game: String
 ) -> Output {
@@ -48,7 +48,7 @@ pub(crate) async fn add_game(
     }
     
     write_data(&data)?;
-    ctx.say(":thumbsup:").await?;
+    ctx.say(THUMB).await?;
     Ok(())
 }
 
@@ -57,7 +57,7 @@ pub(crate) async fn add_game(
 /// Attention : l'orthographe du jeu à enlever doit exactement correspondre.
 /// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
-pub(crate) async fn remove_game(
+pub async fn remove_game(
     ctx: Context<'_>,
     #[description = "Le nom du jeu à dégager"] game: String,
 ) -> Output {
@@ -94,7 +94,7 @@ pub(crate) async fn remove_game(
 /// Cet commande supporte l'accès délégué. Si le paramètre `player` n'est pas précisé,
 /// la commande est appliquée au client.
 #[poise::command(slash_command)]
-pub(crate) async fn list_games(
+pub async fn list_games(
     ctx: Context<'_>, 
     #[description = "L'utilisateur client, par défaut celui à l'origine de cette requête"] player: Option<User>
 ) -> Output {

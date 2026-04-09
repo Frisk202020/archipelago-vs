@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub(crate) enum Status {
+pub enum Status {
     Building,
     Active,
     Closed,

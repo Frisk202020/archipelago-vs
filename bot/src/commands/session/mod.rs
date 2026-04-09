@@ -1,5 +1,3 @@
-pub(crate) mod commands;
+pub mod commands;
 mod data;
 mod interaction;
-mod status;
-mod team_setup;
