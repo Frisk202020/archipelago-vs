@@ -6,19 +6,25 @@ use strum::{AsRefStr, EnumString};
 
 use crate::util::{Context, Error};
 
+pub const NO_REPLY: &'static str = "Hésite pas à répondre la prochaine fois connard";
+
 #[derive(EnumString, AsRefStr)]
 pub enum SessionInteraction {
     StartAccept,
     StartDeny,
     FinishAccept,
-    FinishDeny
+    FinishDeny,
+    ConfirmBuild,
+    DenyBuild,
 } impl SessionInteraction {
     fn button(&self, disabled: bool) -> CreateButton {
         let params = match self {
             Self::StartAccept => ("TG obéi", ButtonStyle::Primary),
             Self::StartDeny => ("Pardon j'annule", ButtonStyle::Danger),
             Self::FinishAccept => ("Proceed.", ButtonStyle::Primary),
-            Self::FinishDeny => ("Oups my bad", ButtonStyle::Danger)
+            Self::FinishDeny => ("Oups my bad", ButtonStyle::Danger),
+            Self::ConfirmBuild => ("C'est tout bon", ButtonStyle::Primary),
+            Self::DenyBuild => ("Att j'ai fais une boulette", ButtonStyle::Danger)
         };
 
         CreateButton::new(self.as_ref()).label(params.0).style(params.1).disabled(disabled)

@@ -6,7 +6,7 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Output = Result<(), Error>;
 pub type Context<'a> = poise::Context<'a, RequestData, Error>;
 
-pub const THUMB: &'static str = ":thumbsup";
+pub const THUMB: &'static str = ":thumbsup:";
 
 pub fn get_json_data<T: DeserializeOwned>(path: &str) -> Result<T, Error> {
     let raw_data = fs::read_to_string(path)?;

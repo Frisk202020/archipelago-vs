@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serenity::all::User;
 
 use crate::{commands::session::data::{Status, TeamSetup}, util::{Error, Output, get_json_data, write_json_data}};
 
@@ -51,6 +52,11 @@ pub struct Data {
             self.write().map(|()| true)
         } else { Ok(false) }
     }
+    pub fn add_player(&mut self, player: User) -> Result<(usize, Option<String>), Error> {
+        let res = self.team_setup.add_player(player);
+        self.write()?;
+        Ok(res)
+    }
 
     fn handle_opt<T, F: FnOnce(&mut Self)->Option<T>>(&mut self, mutation: F) -> Result<Option<T>, Error> {
         let res = mutation(self);
@@ -60,9 +66,6 @@ pub struct Data {
 
         Ok(res)
     }
-    pub fn add_player(&mut self, player: String) -> Result<Option<(usize, Option<String>)>, Error> {
-        self.handle_opt(move |x| x.team_setup.add_player(player))
-    }
     pub fn remove_last_game(&mut self) -> Result<Option<String>, Error> {
         self.handle_opt(|x| x.team_setup.remove_last_game())
     }
@@ -70,7 +73,7 @@ pub struct Data {
         self.handle_opt(|x| x.team_setup.remove_last_player())
     }
 
-    pub fn team_size(&self) -> usize { self.team_setup.team_size() }
+    pub fn team_ids(&self) -> impl Iterator<Item = impl Iterator<Item = u64>> { self.team_setup.team_ids() }
     pub fn check_setup(&self) -> bool { self.team_setup.check() }
     pub fn setup_to_string(&self) ->  String { self.team_setup.to_string() }
 

@@ -1,9 +1,11 @@
 use chrono::Utc;
-use serenity::all::{ChannelType, CreateChannel, EditChannel, EditRole, Mentionable, PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, User};
+use serenity::all::{
+    ChannelType, CreateChannel, EditChannel, EditRole, Mentionable, PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, User
+};
 
 use crate::{
-    commands::session::{data::{Data, Status}, interaction::SessionInteraction}, 
-    util::{Context, Output, THUMB, vec_to_list}
+    commands::session::{data::{Data, Status}, interaction::{NO_REPLY, SessionInteraction}}, 
+    util::{Context, Output, vec_to_list}
 };
 
 const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
@@ -33,7 +35,7 @@ pub async fn init_session(ctx: Context<'_>, team_size: usize) -> Output {
             _ => {},
         }
     } else {
-        ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+        ctx.say(NO_REPLY).await?;
     }
 
     Ok(())
@@ -53,8 +55,8 @@ pub async fn add_session_game(ctx: Context<'_>, game: String) -> Output {
     }
 
     let reply = 
-        if data.add_game(game)? { THUMB }
-        else { "Tous les jeux ont déjà été spécifiés" };
+        if data.add_game(game.clone())? { format!("Jeu ajouté : {game}") }
+        else { "Tous les jeux ont déjà été spécifiés".to_string() };
 
     ctx.say(reply).await?;
     Ok(())
@@ -73,12 +75,8 @@ pub async fn add_session_player(ctx: Context<'_>, player: User) -> Output {
         return Ok(());
     }
 
-    let reply = 
-        if let Some((t_id, game)) = data.add_player(player.name)? {
-            format!("Joueur ajouté à la team {t_id} sur: {}", game.unwrap_or("jeu non défini".to_string()))
-        } else { "Toutes les équipes sont déjà constituées.".to_string() };
-   
-    ctx.say(reply).await?;
+    let (t_id, game) = data.add_player(player)?;
+    ctx.say(format!("Joueur ajouté à la team {} sur: {}", t_id + 1, game.unwrap_or("jeu non défini".to_string()))).await?;
     Ok(())
 }
 
@@ -108,7 +106,7 @@ pub async fn remove_last_player(ctx: Context<'_>) -> Output {
     if let Some((players_left, player)) = data.remove_last_player()? {
         ctx.say(format!("{player} retiré. Il reste maintenant {players_left} joueurs à ajouter dans cette équipe")).await?;
     } else {
-        ctx.say("Plus aucun joueru à retirer").await?;
+        ctx.say("Plus aucun joueur à retirer").await?;
     }
     Ok(())
 } 
@@ -142,7 +140,7 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                     _ => {},
                 }
             } else {
-                ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+                ctx.say(NO_REPLY).await?;
             }
         },
         Status::Building => 'build : {
@@ -151,8 +149,21 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                 break 'build;
             }
 
+            let res = SessionInteraction::handle_interaction(
+                ctx, 
+                format!("Voici la config actuelle, confirme que c'est bon et on y va.\n{}", data.setup_to_string()).as_str(),
+                vec![SessionInteraction::ConfirmBuild, SessionInteraction::DenyBuild]
+            ).await?;
+
+            if let Some(res) = res {
+                match res {
+                    SessionInteraction::DenyBuild => return Ok(()),
+                    _ => {}
+                }
+            } else { ctx.say(NO_REPLY).await?; return Ok(()); }
+
             if let Some(guild) = ctx.partial_guild().await {
-                if let Some(bot_role) = guild.role_by_name("bot") {
+                if let Some(bot_role) = guild.role_by_name("Bot") {
                     let category = guild.create_channel(
                         ctx.http(), 
                         CreateChannel::new("Versus").kind(ChannelType::Category)
@@ -163,16 +174,22 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                         Permissions::READ_MESSAGE_HISTORY |
                         Permissions::SEND_MESSAGES;
 
-                    for i in 1..data.team_size()+1 {
+                    for (index, team) in data.team_ids().enumerate() {
+                        let index = index + 1;
                         let mut channel = guild.create_channel(
                             ctx.http(), 
-                            CreateChannel::new(format!("team-{i}")).category(category.id)
+                            CreateChannel::new(format!("team-{index}")).category(category.id)
                         ).await?;
 
                         let team_role = guild.create_role(
                             ctx.http(),
-                            EditRole::new().name(format!("Team {i}"))
+                            EditRole::new().name(format!("Team {index}"))
                         ).await?;
+
+                        for id in team {
+                            let member = guild.member(ctx.http(), id).await?;
+                            member.add_role(ctx.http(), team_role.id).await?;
+                        }
 
                         channel.edit(ctx.http(), EditChannel::new().permissions(vec![
                             PermissionOverwrite {
@@ -191,7 +208,7 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                         ])).await?;
                     }
 
-                    ctx.say(format!("Session initiée, avec les paramètres suivants :\n{}", data.setup_to_string())).await?;
+                    ctx.say("Session initiée avec succès !").await?;
                 } else {
                     ctx.say("Je ne trouve pas mon rôle -- configuration interompue").await?;
                 } 
@@ -234,7 +251,7 @@ pub async fn finish(
                     _ => {},
                 }
             } else {
-                ctx.say("Hésite pas à répondre la prochaine fois connard").await?;
+                ctx.say(NO_REPLY).await?;
             }
         }
     } else {
