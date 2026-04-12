@@ -10,10 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     commands::{
-        add_game, add_tms, finish, get_time, init_session, list_games, 
-        list_tms, pick_random_game, poll, remove_game, session_duration,
-        start_session, add_session_game, add_session_player, remove_last_player,
-        remove_last_session_game
+        add_game, add_session_game, add_session_player, add_tms, close_session, finish, get_time, help_session, init_session, list_games, list_tms, pick_random_game, poll, remove_game, remove_last_player, remove_last_session_game, session_duration, start_session
     }, util::RequestData
 }; 
 
@@ -47,7 +44,8 @@ async fn main() {
                 remove_game(), list_games(), start_session(),
                 finish(), get_time(), add_tms(), list_tms(), session_duration(),
                 init_session(), add_session_game(), add_session_player(),
-                remove_last_player(), remove_last_session_game()
+                remove_last_player(), remove_last_session_game(), help_session(),
+                close_session()
             ],
             //event_handler: |ctx, event, _, _| Box::pin(event_handler(ctx, event)),
             ..Default::default()

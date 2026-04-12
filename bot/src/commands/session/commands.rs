@@ -1,6 +1,6 @@
 use chrono::Utc;
 use serenity::all::{
-    ChannelType, CreateChannel, EditChannel, EditRole, Mentionable, PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, User
+    ChannelId, ChannelType, CreateChannel, EditChannel, EditRole, Mentionable, PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, User
 };
 
 use crate::{
@@ -11,8 +11,12 @@ use crate::{
 const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
 const GIF: &'static str = "https://giphy.com/gifs/football-lost-hashtagunited-jU9OCvBiO1besabUKU";
 
+/// Commencer la construction d'un versus, écrasant les données d'une session précédente
 #[poise::command(slash_command)]
-pub async fn init_session(ctx: Context<'_>, team_size: usize) -> Output {
+pub async fn init_session(
+    ctx: Context<'_>, 
+    #[description = "Le nombre de joueurs dans chaque équipe (égal au nombre de jeux)"] team_size: usize
+) -> Output {
     let data = Data::get();
     if data.is_err() || data.unwrap().is_closed() {
         Data::write_new(Some(team_size))?;
@@ -38,6 +42,12 @@ pub async fn init_session(ctx: Context<'_>, team_size: usize) -> Output {
         ctx.say(NO_REPLY).await?;
     }
 
+    Ok(())
+}
+
+#[poise::command(slash_command)]
+pub async fn help_session(ctx: Context<'_>) -> Output {
+    ctx.say(format!("Pour commencer une configuration, exécutez `init_session [N]`. Cela initie une session d'équipes de **N** joueurs sur **N** jeux (chaque jeu et joué par un membre de chaque équipe). Ensuite, renseignez les jeux de la session (cela est utile pour la publication vers Google Sheets) : ajoutez les jeux un par un avec `add_session_game [game]`. Vous devez ajouter exactement **N** jeux.\n\nCela fait, préparez ensuite les équipes. Les joueurs sont ajoutés un par un avec `add_session_player [@someone]`, où les N premiers joueurs sont associés à l'équipe 1, les N suivants à l'équipe 2... A noter qu'il n'y a pas de limite sur le nombre d'équipes.\n**Attention** : ajoutez les joueurs dans le même ordre des jeux, c'est-à-dire que le joueur 1 d'une équipe doit être celui qui jouera au premier jeu, ect.\n\nPour finir, lancez `start_session`, vérifiez la configuration et lancez la partie.\nA noter que cette commande :\n- Lance le chrono de la session au moment où la commande se termine\n- Crée un rôle par équipe attribué aux joueurs respectifs\n- Crée un channel par équipe dans la catégorie **Versus**. Ces canaux sont restreint à leur équipe et permettent d'executer des commandes en toute discrétion (bon évidemment les admins, jouez le jeu)")).await?;
     Ok(())
 }
 
@@ -121,7 +131,7 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
         Data::write_new(None)?;
         ctx.say("Session initiée, sans aucune équipe").await?;
         return Ok(());
-    } let data = data.unwrap();
+    } let mut data = data.unwrap();
 
     match data.status() {
         Status::Active => {
@@ -174,6 +184,8 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                         Permissions::READ_MESSAGE_HISTORY |
                         Permissions::SEND_MESSAGES;
 
+                    let mut roles = Vec::with_capacity(data.n_teams());
+                    let mut channels = Vec::with_capacity(data.n_teams() + 1);
                     for (index, team) in data.team_ids().enumerate() {
                         let index = index + 1;
                         let mut channel = guild.create_channel(
@@ -206,8 +218,13 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
                                 kind: PermissionOverwriteType::Role(RoleId::new(guild.id.get()))
                             }
                         ])).await?;
+
+                        channels.push(channel);
+                        roles.push(team_role);
                     }
 
+                    channels.push(category);
+                    data.activate(roles, channels)?;
                     ctx.say("Session initiée avec succès !").await?;
                 } else {
                     ctx.say("Je ne trouve pas mon rôle -- configuration interompue").await?;
@@ -328,5 +345,43 @@ pub async fn session_duration(ctx: Context<'_>) -> Output {
     } else { SESSION_DATA_MISSING_MSG };
 
     ctx.say(res).await?;
+    Ok(())
+}
+
+#[poise::command(slash_command)]
+pub async fn close_session(ctx: Context<'_>) -> Output {
+    let mut data = Data::get()?;
+    if !data.is_active() {
+        ctx.say("Aucune session  active").await?;
+        return Ok(())
+    }
+
+    if let Some(guild) = ctx.partial_guild().await { 'delete_channels: {
+        let channel_data = data.channels();
+        if channel_data.is_empty() { break 'delete_channels; }
+
+        let channels = guild.channels(ctx.http()).await?;
+        for data in channel_data {
+            if let Some(channel) = channels.get(&ChannelId::new(data.id)) {
+                if channel.name == data.name {
+                    channel.delete(ctx.http()).await?;
+                } else {
+                    ctx.say(format!("Un channel ne sera pas supprimé car son nom ne correspond pas à mes données : {}", channel.name)).await?;
+                }
+            } else {
+                ctx.say(format!("Un channel dans ma base n'a pas été trouvé : {}", data.name)).await?;
+            }
+        }
+
+        let roles = data.roles();
+        for role in roles {
+            guild.delete_role(ctx.http(), RoleId::new(role.id)).await?;
+        }
+
+        data.close()?;
+        ctx.say("Session cloturée avec succès !").await?;
+    }} else {
+        ctx.say("Je ne trouve pas le server").await?;
+    } 
     Ok(())
 }

@@ -9,6 +9,6 @@ pub use session::{
         start_session, finish, get_time, add_tms, 
         list_tms, session_duration, init_session, 
         add_session_game, add_session_player, remove_last_player, 
-        remove_last_session_game
+        remove_last_session_game, help_session, close_session
     }, 
 };

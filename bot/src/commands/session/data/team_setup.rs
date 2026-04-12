@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serenity::all::User;
 
+use crate::commands::session::data::DiscordData;
+
 #[derive(Serialize, Deserialize)]
 struct PlayerData {
     id: u64, name: String, display_name: String
@@ -15,10 +17,12 @@ struct PlayerData {
 pub struct TeamSetup {
     team_size: usize,
     games: Vec<String>,
-    teams: Vec<Vec<PlayerData>>
+    teams: Vec<Vec<PlayerData>>,
+    pub channels: Vec<DiscordData>,
+    pub roles: Vec<DiscordData>
 } impl TeamSetup {
     pub fn new(team_size: usize) -> Self {
-        Self { team_size, games: vec![], teams: vec![] }
+        Self { team_size, games: vec![], teams: vec![], channels: vec![], roles: vec![] }
     }
 
     pub fn check(&self) -> bool {
@@ -26,6 +30,7 @@ pub struct TeamSetup {
         self.teams.iter().all(|x| x.len() == self.team_size)
     }
 
+    pub fn n_teams(&self) -> usize { self.teams.len() }
     pub fn team_ids(&self) -> impl Iterator<Item = impl Iterator<Item = u64>> { 
         self.teams.iter().map(|x| x.iter().map(|x| x.id))
     }
