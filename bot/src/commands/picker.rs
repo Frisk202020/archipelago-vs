@@ -8,6 +8,9 @@ type Data = HashMap<String, Vec<String>>;
 const PATH: &'static str = "data/games.json";
 const GIF: &'static str = "https://giphy.com/gifs/spongebob-26ufnwz3wDUli7GU0";
 
+#[poise::command(slash_command, subcommands("pick_random_game", "add_game", "remove_game", "list_games"))]
+pub async fn picker(_ctx: Context<'_>) -> Output { Ok(()) }
+
 fn get_data() -> Result<Data, Error> { get_json_data(PATH) }
 fn write_data(data: &Data) -> Output { write_json_data(data, PATH) }
 
@@ -28,7 +31,7 @@ pub async fn pick_random_game(
 /// 
 /// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
-pub async fn add_game(
+async fn add_game(
     ctx: Context<'_>,
     #[description = "Un jeu goatesque à ajouter à ta liste"] game: String
 ) -> Output {
@@ -57,7 +60,7 @@ pub async fn add_game(
 /// Attention : l'orthographe du jeu à enlever doit exactement correspondre.
 /// Cette commande est nécessairement appliquée au client (pas d'accès délégué).
 #[poise::command(slash_command)]
-pub async fn remove_game(
+async fn remove_game(
     ctx: Context<'_>,
     #[description = "Le nom du jeu à dégager"] game: String,
 ) -> Output {
@@ -94,7 +97,7 @@ pub async fn remove_game(
 /// Cet commande supporte l'accès délégué. Si le paramètre `player` n'est pas précisé,
 /// la commande est appliquée au client.
 #[poise::command(slash_command)]
-pub async fn list_games(
+async fn list_games(
     ctx: Context<'_>, 
     #[description = "L'utilisateur client, par défaut celui à l'origine de cette requête"] player: Option<User>
 ) -> Output {

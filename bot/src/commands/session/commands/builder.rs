@@ -1,19 +1,24 @@
-use chrono::Utc;
 use serenity::all::{
-    ChannelId, ChannelType, CreateChannel, EditChannel, EditRole, Mentionable, PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, User
+    ChannelType, CreateChannel, EditChannel, EditRole, PermissionOverwrite, 
+    PermissionOverwriteType, Permissions, RoleId, User
 };
-
 use crate::{
-    commands::session::{data::{Data, Status}, interaction::{NO_REPLY, SessionInteraction}}, 
-    util::{Context, Output, vec_to_list}
+    commands::session::{data::{Data, Status}, 
+    interaction::{NO_REPLY, SessionInteraction}}, 
+    util::{Context, Output}
 };
 
-const SESSION_DATA_MISSING_MSG: &'static str = "Commence peut-être par lancer une session hein.";
-const GIF: &'static str = "https://giphy.com/gifs/football-lost-hashtagunited-jU9OCvBiO1besabUKU";
+#[poise::command(slash_command, subcommands(
+    "init", "add_game", "add_player", "remove_last_game", 
+    "remove_last_player", "start", "help"
+))]
+pub async fn builder(_ctx: Context<'_>) -> Output { Ok(()) }
 
 /// Commencer la construction d'un versus, écrasant les données d'une session précédente
+/// 
+/// Les données relatives à une précédente session seront supprimées
 #[poise::command(slash_command)]
-pub async fn init_session(
+async fn init(
     ctx: Context<'_>, 
     #[description = "Le nombre de joueurs dans chaque équipe (égal au nombre de jeux)"] team_size: usize
 ) -> Output {
@@ -45,14 +50,21 @@ pub async fn init_session(
     Ok(())
 }
 
+/// Aide utilisateur pour construire une session
 #[poise::command(slash_command)]
-pub async fn help_session(ctx: Context<'_>) -> Output {
+async fn help(ctx: Context<'_>) -> Output {
     ctx.say(format!("Pour commencer une configuration, exécutez `init_session [N]`. Cela initie une session d'équipes de **N** joueurs sur **N** jeux (chaque jeu et joué par un membre de chaque équipe). Ensuite, renseignez les jeux de la session (cela est utile pour la publication vers Google Sheets) : ajoutez les jeux un par un avec `add_session_game [game]`. Vous devez ajouter exactement **N** jeux.\n\nCela fait, préparez ensuite les équipes. Les joueurs sont ajoutés un par un avec `add_session_player [@someone]`, où les N premiers joueurs sont associés à l'équipe 1, les N suivants à l'équipe 2... A noter qu'il n'y a pas de limite sur le nombre d'équipes.\n**Attention** : ajoutez les joueurs dans le même ordre des jeux, c'est-à-dire que le joueur 1 d'une équipe doit être celui qui jouera au premier jeu, ect.\n\nPour finir, lancez `start_session`, vérifiez la configuration et lancez la partie.\nA noter que cette commande :\n- Lance le chrono de la session au moment où la commande se termine\n- Crée un rôle par équipe attribué aux joueurs respectifs\n- Crée un channel par équipe dans la catégorie **Versus**. Ces canaux sont restreint à leur équipe et permettent d'executer des commandes en toute discrétion (bon évidemment les admins, jouez le jeu)")).await?;
     Ok(())
 }
 
+/// Ajouter un jeu à la session en cours de construction
+/// 
+/// Il doit au final y avoir autant de jeux que la taille des équipes
 #[poise::command(slash_command)]
-pub async fn add_session_game(ctx: Context<'_>, game: String) -> Output {
+async fn add_game(
+    ctx: Context<'_>, 
+    #[description = "Nom de jeu à ajouter"] game: String
+) -> Output {
     let mut data = Data::get()?;
     if !data.is_building() {
         ctx.say("La session n'est pas en état de construction").await?;
@@ -72,8 +84,12 @@ pub async fn add_session_game(ctx: Context<'_>, game: String) -> Output {
     Ok(())
 }
 
+/// Ajouter un joueur à la session en cours de construction
 #[poise::command(slash_command)]
-pub async fn add_session_player(ctx: Context<'_>, player: User) -> Output {
+async fn add_player(
+    ctx: Context<'_>, 
+    #[description = "Utilisateur à ajouter"] player: User
+) -> Output {
     let mut data = Data::get()?;
     if !data.is_building() {
         ctx.say("La session n'est pas en état de construction").await?;
@@ -90,8 +106,9 @@ pub async fn add_session_player(ctx: Context<'_>, player: User) -> Output {
     Ok(())
 }
 
+/// Retirer le dernier jeu ajouté à la session en cours de construction
 #[poise::command(slash_command)]
-pub async fn remove_last_session_game(ctx: Context<'_>) -> Output {
+async fn remove_last_game(ctx: Context<'_>) -> Output {
     let mut data = Data::get()?;
     if !data.is_building() {
         ctx.say("La session n'est pas en état de construction").await?;
@@ -105,8 +122,9 @@ pub async fn remove_last_session_game(ctx: Context<'_>) -> Output {
     Ok(())
 }
 
+/// Retirer le dernier joueur ajouté à la session en cours de construction
 #[poise::command(slash_command)]
-pub async fn remove_last_player(ctx: Context<'_>) -> Output {
+async fn remove_last_player(ctx: Context<'_>) -> Output {
     let mut data = Data::get()?;
     if !data.is_building() {
         ctx.say("La session n'est pas en état de construction").await?;
@@ -125,7 +143,7 @@ pub async fn remove_last_player(ctx: Context<'_>) -> Output {
 /// 
 /// Cela supprime les données relatives à une précédente session.
 #[poise::command(slash_command)]
-pub async fn start_session(ctx: Context<'_>) -> Output {
+async fn start(ctx: Context<'_>) -> Output {
     let data = Data::get();
     if data.is_err() {
         Data::write_new(None)?;
@@ -239,149 +257,5 @@ pub async fn start_session(ctx: Context<'_>) -> Output {
         }
     }
 
-    Ok(())
-}
-
-/// Marquer la victoire d'un joueur (sauvegarder le temps de jeu actuel).
-#[poise::command(slash_command)]
-pub async fn finish(
-    ctx: Context<'_>, 
-    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>) -> Output {
-    if let Ok(mut data) = Data::get() { 
-        let user = player.as_ref().unwrap_or(ctx.author());
-        
-        if let Some(end) = data.finish(&user.name, false)? {
-            ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(&end))).await?;
-        } else {
-            let res = SessionInteraction::handle_interaction(
-                ctx, 
-                &format!("Mais... {} avait déjà finit, on remplace par ce nouveau temps ?", user.mention()),
-                vec![SessionInteraction::FinishAccept, SessionInteraction::FinishDeny]
-            ).await?;
-
-            if let Some(res) = res {
-                match res {
-                    SessionInteraction::FinishAccept => {
-                        let end = data.finish(&user.name, true)?.unwrap();
-                        ctx.say(format!("GG {}, tu as fini en {} !", user.mention(), data.display_elapsed(&end))).await?;
-                    },
-                    _ => {},
-                }
-            } else {
-                ctx.say(NO_REPLY).await?;
-            }
-        }
-    } else {
-        ctx.say(SESSION_DATA_MISSING_MSG).await?;
-    }
-    
-    Ok(())
-}
-
-/// Afficher le temps de partie enregistré pour un joueur.
-#[poise::command(slash_command)]
-pub async fn get_time(
-    ctx: Context<'_>, 
-    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
-) -> Output {
-    if let Ok(data) = Data::get() {
-        let target = player.as_ref().unwrap_or(ctx.author());
-        if let Some(end) = data.get_time(&target.name) {
-            ctx.say(format!("{} a fini en {} !", target.mention(), data.display_elapsed(end))).await?;
-        } else {
-            ctx.say(format!("{} n'a pas finit.", target.mention())).await?;
-        }
-    } else {
-        ctx.say(SESSION_DATA_MISSING_MSG).await?;
-    }
-
-    Ok(())
-}
-
-/// Ajouter un split sur la run d'un joueur.
-#[poise::command(slash_command)]
-pub async fn add_tms(
-    ctx: Context<'_>, 
-    #[description = "Description du split"] label: String, 
-    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
-) -> Output {
-    if let Ok(mut data) = Data::get() {
-        let name = player.as_ref().map(|x| &x.name).unwrap_or(&ctx.author().name);
-        data.add_tms(name.as_str(), label.as_str())?;
-        ctx.say("C'est noté.").await?;
-    } else {
-        ctx.say(SESSION_DATA_MISSING_MSG).await?;
-    }
-
-    Ok(())
-}
-
-/// Afficher la liste de tous les splits enregistrés.
-#[poise::command(slash_command)]
-pub async fn list_tms(
-    ctx: Context<'_>, 
-    #[description = "Le joueur qui a terminé, par défaut le client de la commande"] player: Option<User>
-) -> Output {
-    let res = if let Ok(data) = Data::get() {
-        let user = player.as_ref().unwrap_or(ctx.author());
-        if let Some(tms) = data.get_tms(&user.name) {
-            &vec_to_list(tms)
-        } else {
-            GIF
-        }
-    } else {
-        SESSION_DATA_MISSING_MSG
-    };
-
-    ctx.say(res).await?;
-    Ok(())
-}
-
-/// Afficher la durée de la session en cours.
-#[poise::command(slash_command)]
-pub async fn session_duration(ctx: Context<'_>) -> Output {
-    let res = if let Ok(data) = Data::get() {
-        &data.display_elapsed(&Utc::now().naive_utc())
-    } else { SESSION_DATA_MISSING_MSG };
-
-    ctx.say(res).await?;
-    Ok(())
-}
-
-#[poise::command(slash_command)]
-pub async fn close_session(ctx: Context<'_>) -> Output {
-    let mut data = Data::get()?;
-    if !data.is_active() {
-        ctx.say("Aucune session  active").await?;
-        return Ok(())
-    }
-
-    if let Some(guild) = ctx.partial_guild().await { 'delete_channels: {
-        let channel_data = data.channels();
-        if channel_data.is_empty() { break 'delete_channels; }
-
-        let channels = guild.channels(ctx.http()).await?;
-        for data in channel_data {
-            if let Some(channel) = channels.get(&ChannelId::new(data.id)) {
-                if channel.name == data.name {
-                    channel.delete(ctx.http()).await?;
-                } else {
-                    ctx.say(format!("Un channel ne sera pas supprimé car son nom ne correspond pas à mes données : {}", channel.name)).await?;
-                }
-            } else {
-                ctx.say(format!("Un channel dans ma base n'a pas été trouvé : {}", data.name)).await?;
-            }
-        }
-
-        let roles = data.roles();
-        for role in roles {
-            guild.delete_role(ctx.http(), RoleId::new(role.id)).await?;
-        }
-
-        data.close()?;
-        ctx.say("Session cloturée avec succès !").await?;
-    }} else {
-        ctx.say("Je ne trouve pas le server").await?;
-    } 
     Ok(())
 }
