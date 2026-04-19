@@ -1,6 +1,5 @@
 mod commands;
 mod util;
-//mod interaction;
 
 use std::fs;
 use poise::serenity_prelude as serenity;
